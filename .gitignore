@@ -1,0 +1,8 @@
+.env
+.claude
+.github
+
+node_modules
+sites.csv
+snapshots.csv
+dist/

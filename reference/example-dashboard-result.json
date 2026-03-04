@@ -1,0 +1,142 @@
+{
+    "data": {
+        "site": {
+            "id": "5eea4b24482faf49264a90d7",
+            "name": "College of Business",
+            "url": "https://business.utsa.edu/",
+            "enabled": true,
+            "hidden": false,
+            "online": true,
+            "crawlStartedAt": "2026-02-27T03:35:10Z",
+            "nextCrawlTime": "2026-03-06T03:35:10Z",
+            "pagesCount": 1003,
+            "statusMessage": "",
+            "state": "ok",
+            "crawlerConfiguration": {
+                "method": "hierarchical",
+                "pdfCheck": true,
+                "__typename": "CrawlerConfiguration"
+            },
+            "a11yCheck": true,
+            "bestPracticesCheck": true,
+            "linkCheck": true,
+            "profanityCheck": true,
+            "seoCheck": true,
+            "spellCheck": true,
+            "webGovernanceCheck": true,
+            "accessibilityCount": 9,
+            "webGovernanceCount": 1095,
+            "badLinksCount": 0,
+            "misspellingsCount": 0,
+            "seoIssuesCount": 1012,
+            "bestPracticesCount": 2,
+            "latestStatsSnapshot": {
+                "id": "69a51fe32da73cef97432cee",
+                "score": 97.89,
+                "trend": 0.13,
+                "updatedAt": "2026-03-02T05:28:03Z",
+                "accessibility": {
+                    "score": 99.96,
+                    "total": 9,
+                    "trend": 0.01,
+                    "affectedPagesCount": 8,
+                    "__typename": "SiteStatsSnapshotResult"
+                },
+                "badLinks": {
+                    "score": 100.0,
+                    "total": 0,
+                    "trend": 0.67,
+                    "affectedPagesCount": 0,
+                    "__typename": "SiteStatsSnapshotResult"
+                },
+                "spelling": {
+                    "score": 100.0,
+                    "total": 0,
+                    "trend": 0.0,
+                    "affectedPagesCount": 0,
+                    "__typename": "SiteStatsSnapshotResult"
+                },
+                "profanity": {
+                    "score": 100.0,
+                    "total": 0,
+                    "trend": 0.0,
+                    "affectedPagesCount": 0,
+                    "__typename": "SiteStatsSnapshotResult"
+                },
+                "webGovernance": {
+                    "score": 94.54,
+                    "total": 1095,
+                    "trend": 0.0,
+                    "affectedPagesCount": 1003,
+                    "__typename": "SiteStatsSnapshotResult"
+                },
+                "seo": {
+                    "score": 94.96,
+                    "total": 1012,
+                    "trend": 0.0,
+                    "affectedPagesCount": 1003,
+                    "__typename": "SiteStatsSnapshotResult"
+                },
+                "bestPractices": {
+                    "score": 99.99,
+                    "total": 2,
+                    "trend": 0.02,
+                    "affectedPagesCount": 2,
+                    "__typename": "SiteStatsSnapshotResult"
+                },
+                "__typename": "SiteStatsSnapshot"
+            },
+            "latestCrawl": {
+                "id": "69a110ee85be88cfde787057",
+                "createdAt": "2026-02-27T03:35:10Z",
+                "status": "done",
+                "pagesCount": 1003,
+                "__typename": "Crawl"
+            },
+            "uptimeMonitoring": {
+                "enabled": false,
+                "lastResult": null,
+                "__typename": "SiteUptimeMonitoring"
+            },
+            "reportTemplates": [
+                {
+                    "id": "6564ea6d390f320001255718",
+                    "name": "SB 17 Report",
+                    "latestReport": {
+                        "id": "69a1ab2c0be8cda17f4e2c1e",
+                        "date": "2026-02-27",
+                        "url": "https://reports.dubbot.com/production/sites/5eea4b24482faf49264a90d7/UnP5n81q5pFE5woCBW8iziKouGcJKyZa/2026-02-27.html",
+                        "__typename": "Report"
+                    },
+                    "__typename": "ReportTemplate"
+                },
+                {
+                    "id": "698270005629715645ab9934",
+                    "name": "Accessibility Report for all Site",
+                    "latestReport": {
+                        "id": "69a1ab330be8cda17f4e2c1f",
+                        "date": "2026-02-27",
+                        "url": "https://reports.dubbot.com/production/sites/5eea4b24482faf49264a90d7/3uD6rE9VuAKSk4MRK6d6vTXMysi9MYcv/2026-02-27.html",
+                        "__typename": "Report"
+                    },
+                    "__typename": "ReportTemplate"
+                }
+            ],
+            "account": {
+                "id": "5eea4a66482faf4144ada496",
+                "delinquent": false,
+                "delinquentReason": null,
+                "__typename": "Account"
+            },
+            "__typename": "Site"
+        },
+        "assets": {
+            "totalEntries": 62,
+            "__typename": "SiteAssetsResult"
+        }
+    },
+    "request": {
+        "uuid": "b2700db2-99f4-4337-80c3-c711fc4ed028",
+        "seconds": 0.54
+    }
+}

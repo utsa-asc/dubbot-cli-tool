@@ -1,0 +1,26 @@
+{
+  "name": "dubbot-stats",
+  "version": "1.0.0",
+  "type": "module",
+  "bin": { "dubbot-stats": "./dist/index.js" },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "commander": "^12",
+    "csv-stringify": "^6",
+    "dotenv": "^16",
+    "graphql": "^16",
+    "graphql-request": "^7",
+    "pino": "^9",
+    "zod": "^3"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "tsup": "^8",
+    "tsx": "^4",
+    "typescript": "^5"
+  }
+}

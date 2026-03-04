@@ -1,0 +1,7 @@
+{
+  "query": "query SiteQuery($siteId: String!, $accountId: String!) {\n  site(siteId: $siteId, accountId: $accountId) {\n    id\n    url\n    accessibilityCount\n    latestStatsSnapshot {\n      accessibility {\n        score\n        affectedPagesCount\n      }\n    }\n  }\n  assets(\n    siteId: $siteId\n    accountId: $accountId\n    assetTypes: [\"pdf\"]\n    page: 1\n    perPage: 1\n    sortBy: path\n    sortOrder: asc\n  ) {\n    totalEntries\n  }\n}",
+  "variables": {
+    "siteId": "5eea4b24482faf49264a90d7",
+    "accountId": "5eea4a66482faf4144ada496"
+  }
+}

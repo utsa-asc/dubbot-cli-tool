@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>edu.utsa.asc.dubbot-cli</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/local/bin/node</string>
+    <string>/path/to/dubbot-cli/dist/index.js</string>
+    <string>run</string>
+    <string>--out</string>
+    <string>/path/to/snapshots.csv</string>
+  </array>
+
+  <!-- Run every Monday at 08:00 local time -->
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Weekday</key>
+    <integer>1</integer>
+    <key>Hour</key>
+    <integer>8</integer>
+    <key>Minute</key>
+    <integer>0</integer>
+  </dict>
+
+  <!-- Pass your credentials as environment variables -->
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>DUBBOT_API_KEY</key>
+    <string>dubbot_your_api_key_here</string>
+    <key>DUBBOT_ACCOUNT_ID</key>
+    <string>your_account_id_here</string>
+    <key>DUBBOT_SITE_IDS</key>
+    <string>siteId1,siteId2,siteId3</string>
+  </dict>
+
+  <key>StandardOutPath</key>
+  <string>/tmp/dubbot-stats.log</string>
+  <key>StandardErrorPath</key>
+  <string>/tmp/dubbot-stats.err</string>
+</dict>
+</plist>
