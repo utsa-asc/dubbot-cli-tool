@@ -8,18 +8,13 @@
 
   <key>ProgramArguments</key>
   <array>
-    <string>/usr/local/bin/node</string>
-    <string>/path/to/dubbot-cli/dist/index.js</string>
-    <string>run</string>
-    <string>--out</string>
-    <string>/path/to/snapshots.csv</string>
+    <string>/bin/bash</string>
+    <string>/path/to/dubbot-cli/run.sh</string>
   </array>
 
-  <!-- Run every Monday at 08:00 local time -->
+  <!-- Run every day at 08:00 local time -->
   <key>StartCalendarInterval</key>
   <dict>
-    <key>Weekday</key>
-    <integer>1</integer>
     <key>Hour</key>
     <integer>8</integer>
     <key>Minute</key>
@@ -33,8 +28,6 @@
     <string>dubbot_your_api_key_here</string>
     <key>DUBBOT_ACCOUNT_ID</key>
     <string>your_account_id_here</string>
-    <key>DUBBOT_SITE_IDS</key>
-    <string>siteId1,siteId2,siteId3</string>
   </dict>
 
   <key>StandardOutPath</key>
