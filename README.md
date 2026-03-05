@@ -202,7 +202,33 @@ to the LaunchAgents directory and edit the placeholder values:
 cp edu.utsa.asc.dubbot-cli.plist ~/Library/LaunchAgents/edu.utsa.asc.dubbot-cli.plist
 ```
 
-The file looks like this — edit before loading:
+Because launchd does not invoke a shell, `$(date ...)` expansion is not available
+directly in `ProgramArguments`. The recommended approach is to point launchd at a
+small wrapper script that handles the timestamped filename.
+
+**Step 1 — create the wrapper script** (e.g. `/path/to/dubbot-cli/run.sh`):
+
+```bash
+#!/bin/bash
+set -euo pipefail
+
+DUBBOT_DIR="/path/to/dubbot-cli"
+EXPORT_DIR="/path/to/dubbot-exports"
+
+mkdir -p "$EXPORT_DIR"
+
+"$DUBBOT_DIR/node_modules/.bin/ts-node" "$DUBBOT_DIR/dist/index.js" run \
+  --sites-file "$DUBBOT_DIR/sites.csv" \
+  --out "$EXPORT_DIR/snapshots-$(date +%Y-%m-%dT%H%M).csv"
+```
+
+Make it executable:
+
+```bash
+chmod +x /path/to/dubbot-cli/run.sh
+```
+
+**Step 2 — configure the plist** to call the wrapper script:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -215,11 +241,8 @@ The file looks like this — edit before loading:
 
   <key>ProgramArguments</key>
   <array>
-    <string>/usr/local/bin/node</string>
-    <string>/path/to/dubbot-cli/dist/index.js</string>
-    <string>run</string>
-    <string>--out</string>
-    <string>/path/to/snapshots.csv</string>
+    <string>/bin/bash</string>
+    <string>/path/to/dubbot-cli/run.sh</string>
   </array>
 
   <!-- Run every Monday at 08:00 local time -->
@@ -240,8 +263,6 @@ The file looks like this — edit before loading:
     <string>dubbot_your_api_key_here</string>
     <key>DUBBOT_ACCOUNT_ID</key>
     <string>your_account_id_here</string>
-    <key>DUBBOT_SITE_IDS</key>
-    <string>siteId1,siteId2,siteId3</string>
   </dict>
 
   <key>StandardOutPath</key>
@@ -252,7 +273,7 @@ The file looks like this — edit before loading:
 </plist>
 ```
 
-Replace `/path/to/dubbot-cli` and `/path/to/snapshots.csv` with absolute paths.
+Replace `/path/to/dubbot-cli` and `/path/to/dubbot-exports` with absolute paths.
 To find the full path to `node`, run `which node` in your terminal.
 
 Load and enable the job:
@@ -281,10 +302,19 @@ launchctl list | grep dubbot
 ### Cron (Linux / local machine)
 
 ```bash
-# Run every Monday at 7am, append to a persistent CSV
+# Run every Monday at 7am, write a timestamped CSV per run
 0 7 * * 1 node /path/to/dubbot-cli/dist/index.js run \
-  --out /data/accessibility/snapshots.csv \
+  --sites-file /path/to/dubbot-cli/sites.csv \
+  --out "/path/to/dubbot-exports/snapshots-$(date +%Y-%m-%dT%H%M).csv" \
   >> /var/log/dubbot-stats.log 2>&1
+```
+
+The shell expands `$(date +%Y-%m-%dT%H%M)` at run time, producing filenames like
+`snapshots-2026-03-09T0700.csv`. Make sure the output directory exists before the
+first run:
+
+```bash
+mkdir -p /path/to/dubbot-exports
 ```
 
 ---
