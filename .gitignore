@@ -1,6 +1,7 @@
 .env
 .claude
 .github
+.DS_Store
 
 node_modules
 sites.csv
