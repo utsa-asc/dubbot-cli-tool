@@ -195,11 +195,11 @@ To trigger manually: **Actions → DubBot Stats → Run workflow**.
 
 ### macOS — launchd (recommended for Mac)
 
-A template plist is included in the repo at `edu.utsa.asc.dubbot-cli.plist`. Copy it
+A template plist is included in the repo at `edu.utsa.asc.dubbot-cli.plist.example`. Copy it
 to the LaunchAgents directory and edit the placeholder values:
 
 ```bash
-cp edu.utsa.asc.dubbot-cli.plist ~/Library/LaunchAgents/edu.utsa.asc.dubbot-cli.plist
+cp edu.utsa.asc.dubbot-cli.plist.example ~/Library/LaunchAgents/edu.utsa.asc.dubbot-cli.plist
 ```
 
 Because launchd does not invoke a shell, `$(date ...)` expansion is not available
@@ -245,11 +245,9 @@ chmod +x /path/to/dubbot-cli/run.sh
     <string>/path/to/dubbot-cli/run.sh</string>
   </array>
 
-  <!-- Run every Monday at 08:00 local time -->
+  <!-- Run every day at 08:00 local time -->
   <key>StartCalendarInterval</key>
   <dict>
-    <key>Weekday</key>
-    <integer>1</integer>
     <key>Hour</key>
     <integer>8</integer>
     <key>Minute</key>
