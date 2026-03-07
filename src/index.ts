@@ -36,6 +36,11 @@ program
   .action(async () => {
     try {
       const siteId = config.DUBBOT_SITE_IDS[0];
+      if (!siteId) {
+        console.error('ERROR — No site IDs configured; set DUBBOT_SITE_IDS or pass --sites / --sites-file');
+        process.exitCode = 2;
+        return;
+      }
       logger.info({ siteId }, 'Validating config and API connectivity');
       const result = await fetchSiteStats(siteId);
       logger.info({ result }, 'OK — API connection successful');
