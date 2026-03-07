@@ -5,7 +5,7 @@ const envSchema = z.object({
   DUBBOT_API_KEY: z.string().min(1),
   DUBBOT_API_URL: z.string().url().default('https://api.dubbot.com/graphql'),
   DUBBOT_ACCOUNT_ID: z.string().min(1),
-  DUBBOT_SITE_IDS: z.string().min(1).transform((val) => val.split(',').map((s) => s.trim()).filter(Boolean)),
+  DUBBOT_SITE_IDS: z.string().optional().default('').transform((val) => val.split(',').map((s) => s.trim()).filter(Boolean)),
   OUTPUT_FILE: z.string().optional(),
 });
 

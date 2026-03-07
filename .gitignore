@@ -8,3 +8,7 @@ sites.csv
 snapshots.csv
 dist/
 run.sh
+exports/
+logs/
+
+edu.utsa.asc.dubbot-cli.plist

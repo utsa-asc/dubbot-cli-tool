@@ -286,6 +286,10 @@ Other useful commands:
 # Unload (disable) the job
 launchctl unload ~/Library/LaunchAgents/edu.utsa.asc.dubbot-cli.plist
 
+# Reload after editing the plist (unload first, then load again)
+launchctl unload ~/Library/LaunchAgents/edu.utsa.asc.dubbot-cli.plist
+launchctl load ~/Library/LaunchAgents/edu.utsa.asc.dubbot-cli.plist
+
 # Trigger a run immediately (without waiting for the schedule)
 launchctl start edu.utsa.asc.dubbot-cli
 
