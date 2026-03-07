@@ -38,6 +38,13 @@ export async function run(options: RunOptions = {}): Promise<void> {
   } else {
     siteIds = config.DUBBOT_SITE_IDS;
   }
+
+  if (siteIds.length === 0) {
+    logger.error('No site IDs provided — pass --sites, --sites-file, or set DUBBOT_SITE_IDS');
+    process.exitCode = 2;
+    return;
+  }
+
   const outputPath = options.dryRun ? undefined : (options.out ?? config.OUTPUT_FILE);
   const collectedAt = new Date().toISOString();
 
