@@ -1,6 +1,5 @@
 .env
 .claude
-.github
 .DS_Store
 
 node_modules
@@ -12,3 +11,9 @@ exports/
 logs/
 
 edu.utsa.asc.dubbot-cli.plist
+dashboard/data/
+
+# Workbooks hold staff names; never commit them
+xls/
+*.xlsx
+*.xls

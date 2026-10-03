@@ -103,7 +103,7 @@ DUBBOT_API_KEY=...
 DUBBOT_SITE_IDS=...
 
 # now also required:
-DUBBOT_ACCOUNT_ID=5eea4a66482faf4144ada496
+DUBBOT_ACCOUNT_ID=your_account_id_here
 ```
 
 ---
