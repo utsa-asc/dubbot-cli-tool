@@ -35,6 +35,8 @@ const extra = header.filter((h) => !ALLOWED.includes(h));
 if (extra.length) problems.push(`columns not allowed: ${extra.map((h) => JSON.stringify(h)).join(', ')} (allowed: ${ALLOWED.join(', ')})`);
 const missing = ALLOWED.filter((h) => !header.includes(h));
 if (missing.length) problems.push(`missing columns: ${missing.join(', ')}`);
+const duplicates = header.filter((h, i) => header.indexOf(h) !== i);
+if (duplicates.length) problems.push(`duplicate columns: ${[...new Set(duplicates)].join(', ')}`);
 
 const urlCol = header.indexOf('Dubbot URL');
 rows.slice(1).forEach((r, i) => {
