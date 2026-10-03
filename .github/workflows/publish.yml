@@ -65,9 +65,22 @@ jobs:
         run: |
           mkdir -p out
           printf '%s\n' "$SITES_MAIN_CSV" > "$RUNNER_TEMP/sites-main.csv"
+          output="out/snapshots-$(TZ=America/Chicago date +%Y-%m-%dT%H%M).csv"
           node dist/index.js run \
             --sites-file "$RUNNER_TEMP/sites-main.csv" \
-            --out "out/snapshots-$(TZ=America/Chicago date +%Y-%m-%dT%H%M).csv"
+            --out "$output"
+          SITE_LIST="$RUNNER_TEMP/sites-main.csv" EXPORTED_CSV="$output" node --input-type=module - <<'NODE'
+          import fs from 'node:fs';
+          const ids = fs.readFileSync(process.env.SITE_LIST, 'utf8').split('\n').flatMap((line) => line.split(',')).map((id) => id.trim()).filter(Boolean);
+          if (ids.length && !/^[0-9a-f]{24}$/i.test(ids[0])) ids.shift();
+          const expected = new Set(ids).size;
+          const actual = fs.readFileSync(process.env.EXPORTED_CSV, 'utf8').split(/\r?\n/).filter(Boolean).length - 1;
+          if (expected !== ids.length || actual !== expected) {
+            fs.rmSync(process.env.EXPORTED_CSV);
+            console.error(`main export incomplete or has duplicate site IDs: expected ${expected} rows from ${ids.length} IDs, got ${actual}; discarded`);
+            process.exit(1);
+          }
+          NODE
         env:
           DUBBOT_API_KEY: ${{ secrets.DUBBOT_API_KEY }}
           DUBBOT_ACCOUNT_ID: ${{ secrets.DUBBOT_ACCOUNT_ID }}
@@ -79,9 +92,22 @@ jobs:
         run: |
           mkdir -p out
           printf '%s\n' "$SITES_DLS_CSV" > "$RUNNER_TEMP/sites-dls.csv"
+          output="out/snapshots-dls-$(TZ=America/Chicago date +%Y-%m-%dT%H%M).csv"
           node dist/index.js run \
             --sites-file "$RUNNER_TEMP/sites-dls.csv" \
-            --out "out/snapshots-dls-$(TZ=America/Chicago date +%Y-%m-%dT%H%M).csv"
+            --out "$output"
+          SITE_LIST="$RUNNER_TEMP/sites-dls.csv" EXPORTED_CSV="$output" node --input-type=module - <<'NODE'
+          import fs from 'node:fs';
+          const ids = fs.readFileSync(process.env.SITE_LIST, 'utf8').split('\n').flatMap((line) => line.split(',')).map((id) => id.trim()).filter(Boolean);
+          if (ids.length && !/^[0-9a-f]{24}$/i.test(ids[0])) ids.shift();
+          const expected = new Set(ids).size;
+          const actual = fs.readFileSync(process.env.EXPORTED_CSV, 'utf8').split(/\r?\n/).filter(Boolean).length - 1;
+          if (expected !== ids.length || actual !== expected) {
+            fs.rmSync(process.env.EXPORTED_CSV);
+            console.error(`DLS export incomplete or has duplicate site IDs: expected ${expected} rows from ${ids.length} IDs, got ${actual}; discarded`);
+            process.exit(1);
+          }
+          NODE
         env:
           DUBBOT_API_KEY: ${{ secrets.DUBBOT_API_KEY }}
           DUBBOT_ACCOUNT_ID: ${{ secrets.DUBBOT_ACCOUNT_ID }}
