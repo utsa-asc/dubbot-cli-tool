@@ -62,7 +62,7 @@
     // Normalise restored state against the data.
     var t = state.scope.type;
     if ((t === 'vpaa' || t === 'dls') && !model.hasDirectory) state.scope.type = 'all';
-    if (t === 'site' && !model.sitesById.has(state.scope.site)) state.scope.type = 'all';
+if (t === 'site' && !model.sitesById.has(state.scope.site)) { state.scope.type = 'all'; state.scope.site = ''; }
     if (t === 'unlisted' && !model.unlisted.length) state.scope.type = 'all';
     state.scope.custom = state.scope.custom.filter(function (id) { return model.sitesById.has(id); });
     if (!['prev', '7', '30', '90', 'all'].some(function (w) { return w === state.win; })) state.win = '30';
