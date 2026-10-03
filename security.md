@@ -195,7 +195,7 @@ the CLI needs it.
 - **Secrets in git:** `.env`, the plist and `sites.csv` are gitignored and were never committed (`git log -- .env` is empty). No secrets are in the workflow file.
 - **Workflow triggers:** only `schedule`, `push` to `main`, and `workflow_dispatch`. No `pull_request_target`, so fork PRs can't reach secrets.
 - **Secret handling in steps:** secrets are passed through `env:` and written with `printf`, never interpolated into the script text (no shell injection through secret values).
-- **Permissions:** workflow default is `contents: read`; only the export job gets `contents: write`; only the deploy job gets `pages`/`id-token`.
+- **Permissions:** workflow default denies all permissions; only the `commit` job gets `contents: write`; only the `deploy` job gets `pages: write`/`id-token: write`.
 - **Pages environment:** `github-pages` limits deployment to the default branch.
 - **Dependencies:** lockfile present and `npm ci` used. Versions are current majors. Not audited (see above).
 - **Network:** the page loads no third-party code or fonts; the CLI talks only to `DUBBOT_API_URL`.
