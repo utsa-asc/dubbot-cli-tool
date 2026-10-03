@@ -20,3 +20,4 @@ CLI="$(cd "$(dirname "$0")/.." && pwd)/dist/index.js"
 #   robocopy "$DATA_DIR" '\\server\dubbot\data' /E /XF manifest.json
 #   cp "$DATA_DIR"/manifest.json '\\server\dubbot\data\'
 echo "publish: DEST not configured; manifest rebuilt only" >&2
+exit 1
