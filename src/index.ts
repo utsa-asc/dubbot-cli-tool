@@ -4,6 +4,7 @@ import { run } from './orchestrator.js';
 import { config } from './config.js';
 import { fetchSiteStats } from './clients/dubbot.js';
 import { logger } from './utils/logger.js';
+import { writeManifest } from './commands/manifest.js';
 
 program
   .name('dubbot-stats')
@@ -45,6 +46,15 @@ program
       console.error(`ERROR — ${err instanceof Error ? err.message : String(err)}`);
       process.exitCode = 2;
     }
+  });
+
+program
+  .command('manifest')
+  .description('Write manifest.json listing the snapshot CSVs in a folder (for the dashboard)')
+  .requiredOption('-d, --dir <folder>', 'Folder containing snapshots*.csv files')
+  .action((opts) => {
+    const manifest = writeManifest(opts.dir);
+    console.log(`Wrote ${opts.dir}/manifest.json (${manifest.files.length} files)`);
   });
 
 program
