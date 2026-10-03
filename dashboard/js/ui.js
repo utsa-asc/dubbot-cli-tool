@@ -180,7 +180,7 @@
   function renderSiteCard(el, site) {
     if (!site) { el.innerHTML = ''; return; }
     var lists = site.lists.join(', ');
-    el.innerHTML = '<div class="card"><h2 style="margin-top:0">' + esc(site.name) + '</h2><dl>' +
+    el.innerHTML = '<div class="card"><h2 class="site-card-heading">' + esc(site.name) + '</h2><dl>' +
       '<dt>List</dt><dd>' + esc(lists) + '</dd>' +
       '<dt>DubBot</dt><dd><a href="' + esc(safeHref(site.dubbotUrl)) + '" target="_blank" rel="noopener">Open in DubBot<span class="sr-only"> (opens in new tab)</span></a></dd>' +
       '<dt>Readings</dt><dd>' + site.readings.length + ' days, first ' + site.readings[0].day + ', last ' + site.latest.day + '</dd></dl></div>';

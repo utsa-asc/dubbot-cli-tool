@@ -61,6 +61,7 @@ button.link { background: none; border: 0; padding: 0; font: inherit; cursor: po
 
 .scope-summary { margin: .9rem 0 .25rem; font-weight: 600; }
 #site-card .card { margin-bottom: .75rem; }
+#site-card .site-card-heading { margin-top: 0; }
 #site-card dl { display: grid; grid-template-columns: max-content 1fr; gap: 2px 14px; margin: .4rem 0 0; }
 #site-card dt { color: var(--muted); }
 #site-card dd { margin: 0; }
