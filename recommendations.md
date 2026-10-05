@@ -43,7 +43,7 @@ is in good shape, but only one test protects it, and that test needs real data.
 | 12 | Low | `--no-header` is documented as "accepted but not yet implemented", and the `list-sites` and `schema` commands are stubs that print TODO. | `src/index.ts` | Implement or delete; stubs invite confusion. |
 | 13 | Low | The cron is fixed in UTC: 13:00 UTC is 08:00 Central in summer and 07:00 in winter. | `publish.yml:9` | Fine if you don't care; otherwise run at two UTC times and skip the one that isn't 08:00 local. |
 | 14 | Low | `manifest` runs through a default-command CLI, so `node dist/index.js manifest --dir x` on a stale `dist/` fails with the confusing `unknown option '--dir'`. | `src/index.ts` | Print the build date or bump the version; mention it in errors. |
-| 15 | Low | Both jobs run `npm ci && npm run build` just to get the manifest command. | `publish.yml:51,125` | Make the manifest a plain Node script (like `strip-owners.mjs`); the deploy job then needs no build. |
+| 15 | ~~Low~~ **Done 2026-10-05** | Both jobs ran `npm ci && npm run build` just to get the manifest command (which also crashed without DubBot credentials). Now `scripts/build-manifest.mjs`; the build job runs no npm.  | `publish.yml:51,125` | Make the manifest a plain Node script (like `strip-owners.mjs`); the deploy job then needs no build. |
 | 16 | Low | No `timeout-minutes` on either job; a hung API call blocks the serialized queue for up to 6 hours. | `publish.yml` | `timeout-minutes: 15` (export) and `10` (deploy). |
 
 ## Workflow-specific notes

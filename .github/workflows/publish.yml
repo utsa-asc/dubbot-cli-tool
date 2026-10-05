@@ -9,7 +9,7 @@ name: Publish dashboard
 #
 #   export  (contents: read + DubBot secrets)  runs npm and the export, uploads CSVs
 #   commit  (contents: write, no npm)          validates and pushes CSVs to `data`
-#   build   (contents: read)                   runs npm, assembles and tests the site
+#   build   (contents: read)                   no npm, no secrets: assembles and tests the site
 #   deploy  (pages + id-token, no checkout)    only publishes the built artifact
 #
 # Actions are pinned to commit SHAs (the comment shows the release); Dependabot
@@ -199,13 +199,7 @@ jobs:
           path: data-src
           persist-credentials: false
 
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - run: npm ci --ignore-scripts && npm run build
-
+      # No npm and no secrets in this job: everything below is plain Node.
       - name: Assemble site
         run: |
           mkdir -p _site/data
@@ -215,7 +209,7 @@ jobs:
           # allow-list, an email-like value, or a Dubbot URL that is not an
           # https link on dubbot.com.
           node scripts/check-directory.mjs data-src/sites-directory.csv _site/data/sites-directory.csv
-          node dist/index.js manifest --dir _site/data
+          node scripts/build-manifest.mjs _site/data
           touch _site/.nojekyll
 
       - name: Test data

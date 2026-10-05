@@ -7,9 +7,9 @@ set -euo pipefail
 
 DATA_DIR="${DATA_DIR:-/Users/garza/Development-vpaa/dubbot-cli/dashboard/data}"
 NODE="${NODE:-/opt/local/bin/node}"
-CLI="$(cd "$(dirname "$0")/.." && pwd)/dist/index.js"
+SCRIPTS="$(cd "$(dirname "$0")" && pwd)"
 
-"$NODE" "$CLI" manifest --dir "$DATA_DIR"
+"$NODE" "$SCRIPTS/build-manifest.mjs" "$DATA_DIR"
 
 # CSVs first, manifest last, so the page never sees a manifest that lists
 # files that have not arrived yet.
@@ -19,5 +19,6 @@ CLI="$(cd "$(dirname "$0")/.." && pwd)/dist/index.js"
 # Windows / IIS share:
 #   robocopy "$DATA_DIR" '\\server\dubbot\data' /E /XF manifest.json
 #   cp "$DATA_DIR"/manifest.json '\\server\dubbot\data\'
-echo "publish: DEST not configured; manifest rebuilt only" >&2
+echo "publish: DEST not configured; manifest rebuilt only, nothing copied" >&2
+exit 1
 exit 1
