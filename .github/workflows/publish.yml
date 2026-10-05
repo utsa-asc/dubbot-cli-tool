@@ -1,0 +1,242 @@
+name: Publish dashboard
+
+# Daily: run the DubBot export, commit the new CSVs to the `data` branch, and
+# deploy the dashboard to GitHub Pages. A push to main that touches the
+# dashboard redeploys without running the export.
+#
+# Security layout: no job that runs third-party code (npm) holds a write token
+# or a Pages deploy permission.
+#
+#   export  (contents: read + DubBot secrets)  runs npm and the export, uploads CSVs
+#   commit  (contents: write, no npm)          validates and pushes CSVs to `data`
+#   build   (contents: read)                   runs npm, assembles and tests the site
+#   deploy  (pages + id-token, no checkout)    only publishes the built artifact
+#
+# Actions are pinned to commit SHAs (the comment shows the release); Dependabot
+# keeps them current.
+on:
+  schedule:
+    - cron: '0 13 * * *'   # 13:00 UTC = 08:00 US Central (CDT)
+  push:
+    branches: [main]
+    paths:
+      - 'dashboard/**'
+      - 'scripts/**'
+      - 'src/**'
+      - '.github/workflows/publish.yml'
+  workflow_dispatch:
+    inputs:
+      run_export:
+        description: 'Run the DubBot export before deploying'
+        type: boolean
+        default: true
+
+permissions: {}
+
+# One run at a time so two jobs never race to push the data branch.
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  export:
+    if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.run_export)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # --ignore-scripts: no dependency install scripts run. esbuild (used by
+      # tsup) gets its binary from an optional platform package, not a script.
+      - run: npm ci --ignore-scripts && npm run build
+
+      - name: Export main list
+        id: main
+        continue-on-error: true
+        run: |
+          mkdir -p out
+          printf '%s\n' "$SITES_MAIN_CSV" > "$RUNNER_TEMP/sites-main.csv"
+          output="out/snapshots-$(TZ=America/Chicago date +%Y-%m-%dT%H%M).csv"
+          node dist/index.js run \
+            --sites-file "$RUNNER_TEMP/sites-main.csv" \
+            --out "$output"
+          SITE_LIST="$RUNNER_TEMP/sites-main.csv" EXPORTED_CSV="$output" node --input-type=module - <<'NODE'
+          import fs from 'node:fs';
+          const ids = fs.readFileSync(process.env.SITE_LIST, 'utf8').split('\n').flatMap((line) => line.split(',')).map((id) => id.trim()).filter(Boolean);
+          if (ids.length && !/^[0-9a-f]{24}$/i.test(ids[0])) ids.shift();
+          const expected = new Set(ids).size;
+          const actual = fs.readFileSync(process.env.EXPORTED_CSV, 'utf8').split(/\r?\n/).filter(Boolean).length - 1;
+          if (expected !== ids.length || actual !== expected) {
+            fs.rmSync(process.env.EXPORTED_CSV);
+            console.error(`main export incomplete or has duplicate site IDs: expected ${expected} rows from ${ids.length} IDs, got ${actual}; discarded`);
+            process.exit(1);
+          }
+          NODE
+        env:
+          DUBBOT_API_KEY: ${{ secrets.DUBBOT_API_KEY }}
+          DUBBOT_ACCOUNT_ID: ${{ secrets.DUBBOT_ACCOUNT_ID }}
+          SITES_MAIN_CSV: ${{ secrets.SITES_MAIN_CSV }}
+
+      - name: Export DLS list
+        id: dls
+        continue-on-error: true
+        run: |
+          mkdir -p out
+          printf '%s\n' "$SITES_DLS_CSV" > "$RUNNER_TEMP/sites-dls.csv"
+          output="out/snapshots-dls-$(TZ=America/Chicago date +%Y-%m-%dT%H%M).csv"
+          node dist/index.js run \
+            --sites-file "$RUNNER_TEMP/sites-dls.csv" \
+            --out "$output"
+          SITE_LIST="$RUNNER_TEMP/sites-dls.csv" EXPORTED_CSV="$output" node --input-type=module - <<'NODE'
+          import fs from 'node:fs';
+          const ids = fs.readFileSync(process.env.SITE_LIST, 'utf8').split('\n').flatMap((line) => line.split(',')).map((id) => id.trim()).filter(Boolean);
+          if (ids.length && !/^[0-9a-f]{24}$/i.test(ids[0])) ids.shift();
+          const expected = new Set(ids).size;
+          const actual = fs.readFileSync(process.env.EXPORTED_CSV, 'utf8').split(/\r?\n/).filter(Boolean).length - 1;
+          if (expected !== ids.length || actual !== expected) {
+            fs.rmSync(process.env.EXPORTED_CSV);
+            console.error(`DLS export incomplete or has duplicate site IDs: expected ${expected} rows from ${ids.length} IDs, got ${actual}; discarded`);
+            process.exit(1);
+          }
+          NODE
+        env:
+          DUBBOT_API_KEY: ${{ secrets.DUBBOT_API_KEY }}
+          DUBBOT_ACCOUNT_ID: ${{ secrets.DUBBOT_ACCOUNT_ID }}
+          SITES_DLS_CSV: ${{ secrets.SITES_DLS_CSV }}
+
+      - name: Upload exported CSVs
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: export-csvs
+          path: out/*.csv
+          if-no-files-found: ignore
+          retention-days: 1
+
+      - name: Fail the run if an export failed
+        if: steps.main.outcome == 'failure' || steps.dls.outcome == 'failure'
+        run: |
+          echo "main export: ${{ steps.main.outcome }}, DLS export: ${{ steps.dls.outcome }}"
+          exit 1
+
+  commit:
+    needs: export
+    # Commit whatever was exported, even if one of the two exports failed.
+    if: ${{ !cancelled() && needs.export.result != 'skipped' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      # The only checkout that keeps a write token. No npm or third-party code
+      # runs in this job after it, only the shell below and pinned actions.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: data
+          path: data
+
+      - name: Download exported CSVs
+        id: download
+        continue-on-error: true   # no artifact when both exports failed
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: export-csvs
+          path: incoming
+
+      - name: Validate and commit new CSVs
+        if: steps.download.outcome == 'success'
+        working-directory: data
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          header='Collected At,Site URL,DubBot Site ID,Score (%),PDF Count,Issues Count,Pages With Issues'
+          for f in ../incoming/*; do
+            b=$(basename "$f")
+            # Only the exact file names and format the export produces.
+            [[ "$b" =~ ^snapshots(-dls)?-[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{4}\.csv$ ]] || { echo "unexpected file in artifact: $b"; exit 1; }
+            [ "$(head -n1 "$f" | tr -d '\r')" = "$header" ] || { echo "unexpected header in $b"; exit 1; }
+            [ "$(wc -l < "$f")" -ge 2 ] || { echo "no data rows in $b"; exit 1; }
+            [ ! -e "$b" ] || { echo "refusing to overwrite existing $b"; exit 1; }
+            cp "$f" "./$b"
+          done
+          git config user.name  'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add snapshots*.csv
+          if git diff --cached --quiet; then
+            echo 'No new CSVs to commit'
+          else
+            git commit -m "data: export $(date -u +%Y-%m-%d)"
+            git push origin HEAD:data
+          fi
+
+  build:
+    needs: [export, commit]
+    # Build and publish after a successful, failed or skipped export so whatever
+    # data exists goes out. The dashboard banner warns when data is stale.
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - name: Check out data branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: data
+          path: data-src
+          persist-credentials: false
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci --ignore-scripts && npm run build
+
+      - name: Assemble site
+        run: |
+          mkdir -p _site/data
+          cp -R dashboard/css dashboard/js dashboard/index.html _site/
+          cp data-src/snapshots*.csv _site/data/
+          # Fails the build if the directory has any column outside the
+          # allow-list, an email-like value, or a Dubbot URL that is not an
+          # https link on dubbot.com.
+          node scripts/check-directory.mjs data-src/sites-directory.csv _site/data/sites-directory.csv
+          node dist/index.js manifest --dir _site/data
+          touch _site/.nojekyll
+
+      - name: Test data
+        run: DATA_DIR=_site/data node dashboard/tests/model.test.js
+
+      - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # Publishing only: no checkout, no npm, no repo contents.
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5

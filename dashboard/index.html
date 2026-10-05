@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DubBot Accessibility Dashboard</title>
+  <meta name="color-scheme" content="light dark">
+  <meta name="robots" content="noindex, nofollow">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to dashboard</a>
+
+  <header class="top">
+    <div>
+      <h1>DubBot Accessibility Dashboard</h1>
+      <p id="asof" class="muted">Loading…</p>
+    </div>
+    <div id="health" role="status"></div>
+  </header>
+
+  <main id="main" tabindex="-1">
+    <section id="loader" class="card" hidden>
+      <h2>Load snapshot data</h2>
+      <p id="loader-msg"></p>
+      <div id="drop" class="drop" tabindex="0" role="button" aria-describedby="drop-help">
+        <strong>Drop CSV files here</strong> or <label class="link-label">choose files<input id="file" type="file" accept=".csv" multiple></label>
+        <p id="drop-help" class="muted">Snapshot files (<code>snapshots-*.csv</code>) plus, optionally, <code>sites-directory.csv</code>.</p>
+      </div>
+    </section>
+
+    <div id="app" hidden>
+      <section class="controls card" aria-labelledby="controls-h">
+        <h2 id="controls-h" class="sr-only">Scope and comparison window</h2>
+        <div class="field">
+          <label for="scope">Scope</label>
+          <select id="scope">
+            <option value="all">All sites</option>
+            <option value="vpaa">VPAA list</option>
+            <option value="dls">DLS list</option>
+            <option value="custom">Custom selection…</option>
+            <option value="site">Single site…</option>
+            <option value="unlisted">Not in directory</option>
+          </select>
+        </div>
+        <div class="field" id="site-field" hidden>
+          <label for="site">Site</label>
+          <input id="site" list="site-list" autocomplete="off" placeholder="Start typing a site…">
+          <datalist id="site-list"></datalist>
+        </div>
+        <div class="field" id="custom-field" hidden>
+          <details id="custom-picker" class="picker">
+            <summary><span id="custom-count">0 sites selected</span></summary>
+            <div class="picker-body">
+              <label class="sr-only" for="custom-filter">Filter sites</label>
+              <input id="custom-filter" type="search" placeholder="Filter sites…">
+              <div class="picker-actions">
+                <button type="button" id="custom-all" class="btn">Select shown</button>
+                <button type="button" id="custom-none" class="btn">Clear</button>
+              </div>
+              <fieldset id="custom-list"><legend class="sr-only">Sites</legend></fieldset>
+            </div>
+          </details>
+        </div>
+        <div class="field">
+          <label for="window">Compare with</label>
+          <select id="window">
+            <option value="prev">Previous reading</option>
+            <option value="7">7 days ago</option>
+            <option value="30" selected>30 days ago</option>
+            <option value="90">90 days ago</option>
+            <option value="all">Baseline (first reading)</option>
+          </select>
+        </div>
+        <div class="field grow">
+          <button type="button" id="copy-link" class="btn">Copy link to this view</button>
+          <span id="copy-msg" class="muted" role="status"></span>
+        </div>
+      </section>
+
+      <p id="scope-summary" class="scope-summary"></p>
+      <div id="site-card"></div>
+
+      <section aria-labelledby="kpi-h">
+        <h2 id="kpi-h" class="sr-only">Key figures</h2>
+        <div id="kpis" class="kpis"></div>
+        <p id="kpi-notes" class="notes"></p>
+      </section>
+
+      <section aria-labelledby="trend-h">
+        <div class="section-head">
+          <h2 id="trend-h">Trends</h2>
+          <label class="check"><input type="checkbox" id="band"> Show lowest–highest score band</label>
+        </div>
+        <p class="muted small">Shaded area marks the comparison window. On days with no readings, lines are drawn straight between the neighbouring readings (estimates, marked with ~ in the tooltip). Totals carry each site's last reading forward.</p>
+        <div class="charts">
+          <figure class="card"><figcaption id="c1-t">Score (%)</figcaption><div id="chart-score"></div><div id="table-score"></div></figure>
+          <figure class="card"><figcaption id="c2-t">Accessibility issues</figcaption><div id="chart-issues"></div><div id="table-issues"></div></figure>
+          <figure class="card wide"><figcaption id="c3-t">PDF count</figcaption><div id="chart-pdf"></div><div id="table-pdf"></div></figure>
+        </div>
+      </section>
+
+      <section aria-labelledby="mv-h">
+        <div class="section-head">
+          <h2 id="mv-h">Gains and losses</h2>
+          <div class="field inline">
+            <label for="mv-metric">Rank by</label>
+            <select id="mv-metric">
+              <option value="issues">Issues count</option>
+              <option value="score">Score</option>
+            </select>
+          </div>
+        </div>
+        <p id="mv-sub" class="muted small"></p>
+        <div class="movers">
+          <div class="card"><h3>Biggest improvements</h3><div id="mv-good"></div></div>
+          <div class="card"><h3>Biggest regressions</h3><div id="mv-bad"></div></div>
+        </div>
+      </section>
+
+      <section aria-labelledby="tbl-h">
+        <div class="section-head">
+          <h2 id="tbl-h">Sites</h2>
+          <div class="field inline">
+            <label for="tbl-filter">Filter</label>
+            <input id="tbl-filter" type="search" placeholder="Site name…">
+          </div>
+        </div>
+        <div class="card table-scroll" id="sites-table"></div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="foot muted small">
+    <p id="foot-note"></p>
+    <p>Readings are grouped by calendar day (America/Chicago); if a site was read more than once in a day, the latest reading is used. A site with no new reading for 7 days is marked stale and keeps its last values.</p>
+  </footer>
+
+  <script src="js/load.js"></script>
+  <script src="js/model.js"></script>
+  <script src="js/metrics.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

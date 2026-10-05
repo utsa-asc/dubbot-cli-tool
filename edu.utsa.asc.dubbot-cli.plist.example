@@ -21,18 +21,11 @@
     <integer>0</integer>
   </dict>
 
-  <!-- Pass your credentials as environment variables -->
-  <key>EnvironmentVariables</key>
-  <dict>
-    <key>DUBBOT_API_KEY</key>
-    <string>dubbot_your_api_key_here</string>
-    <key>DUBBOT_ACCOUNT_ID</key>
-    <string>your_account_id_here</string>
-  </dict>
-
+  <!-- No credentials here: run.sh cds into the project and dotenv reads .env
+       (chmod 600 .env). Logs go in the project, not /tmp. -->
   <key>StandardOutPath</key>
-  <string>/tmp/dubbot-stats.log</string>
+  <string>/path/to/dubbot-cli/logs/dubbot-stats.log</string>
   <key>StandardErrorPath</key>
-  <string>/tmp/dubbot-stats.err</string>
+  <string>/path/to/dubbot-cli/logs/dubbot-stats.err</string>
 </dict>
 </plist>
