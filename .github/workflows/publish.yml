@@ -203,7 +203,7 @@ jobs:
       - name: Assemble site
         run: |
           mkdir -p _site/data
-          cp -R dashboard/css dashboard/js dashboard/index.html _site/
+          cp -R dashboard/css dashboard/js dashboard/fonts dashboard/index.html _site/
           cp data-src/snapshots*.csv _site/data/
           # Fails the build if the directory has any column outside the
           # allow-list, an email-like value, or a Dubbot URL that is not an

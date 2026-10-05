@@ -34,7 +34,7 @@ node scripts/build-manifest.mjs dashboard/data
 
 `scripts/publish.sh` rebuilds the manifest and (once configured) mirrors
 `dashboard/data/` to the web server: CSVs first, `manifest.json` last. Deploy
-`index.html`, `css/`, `js/` once; only `data/` changes day to day. Fill in the
+`index.html`, `css/`, `js/`, `fonts/` once; only `data/` changes day to day. Fill in the
 copy command in the script when the host is chosen.
 
 ## How the numbers work
