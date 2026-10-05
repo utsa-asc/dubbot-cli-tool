@@ -59,7 +59,7 @@ to the repo. The deploy job had the same shape with `pages: write` and
   - `export`: `contents: read` plus the DubBot secrets. It runs npm and the export, then uploads the CSVs as an artifact.
   - `commit`: `contents: write`, with no Node or npm. It validates each artifact file (exact name pattern, exact CSV header, at least one data row, no overwriting) and pushes to `data`. Only your own shell and pinned actions run there.
 - **Layer 3:** the deploy job is split.
-  - `build`: `contents: read`. It runs npm, assembles and tests the site, and uploads the Pages artifact.
+  - `build`: `contents: read`. It assembles and tests the site and uploads the Pages artifact. (As of 2026-10-05 it runs no npm at all: the manifest is built by a plain Node script.)
   - `deploy`: `pages: write` and `id-token: write`, with no checkout and no code. It only runs `deploy-pages`.
 - **Layer 5:**
   - `npm ci --ignore-scripts` in both jobs that run npm.

@@ -21,13 +21,13 @@ a drop zone: drop `snapshots-*.csv` files (and optionally `sites-directory.csv`)
 | `snapshots-*.csv`, `snapshots-dls-*.csv` | One per CLI run (`dubbot-stats run --out ...`). `dls-` in the name tags the DLS list |
 | `snapshots-backfill.csv` | One-time export of runs that only existed in the workbook (01-20 baseline, 09-01, 09-29, 09-30) |
 | `sites-directory.csv` | **Maintained by hand.** `Site ID, Display URL, List, Dubbot URL` only. `List` is `VPAA`, `DLS`, or `VPAA;DLS`. Sites missing from it show as "not in directory". No personal data: `scripts/check-directory.mjs` enforces this |
-| `manifest.json` | Written by `dubbot-stats manifest --dir dashboard/data` |
+| `manifest.json` | Written by `scripts/build-manifest.mjs dashboard/data` |
 
 The page reads `manifest.json` first, then fetches every CSV it lists.
 After new exports land, rebuild the manifest:
 
 ```bash
-node dist/index.js manifest --dir dashboard/data
+node scripts/build-manifest.mjs dashboard/data
 ```
 
 ## Publishing
