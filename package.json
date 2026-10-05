@@ -11,7 +11,7 @@
   "dependencies": {
     "commander": "^12",
     "csv-stringify": "^6",
-    "dotenv": "^16",
+    "dotenv": "^18",
     "graphql": "^16",
     "graphql-request": "^7",
     "pino": "^9",
