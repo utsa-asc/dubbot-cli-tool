@@ -44,6 +44,7 @@
 
   // opts: {container, title, days, series:[{key,name,color,dash,values,fmt}],
   //        band:{lo,hi,name,color}|null, yFmt, window:{startIdx,endIdx}|null, yMin, yMax}
+  var chartCount = 0;
   function lineChart(opts) {
     var box = opts.container;
     box.innerHTML = '';
@@ -68,10 +69,23 @@
     var W = Math.max(280, box.clientWidth || 600), H = 250;
     var m = { l: 56, r: 14, t: 10, b: 28 }, iw = W - m.l - m.r, ih = H - m.t - m.b;
     var n = opts.days.length;
+    // The x axis covers opts.range (indices into days); default is every day.
+    var from = opts.range ? Math.max(0, opts.range.from) : 0;
+    var to = opts.range ? Math.min(n - 1, opts.range.to) : n - 1;
+    var span = to - from;
+    var clipId = 'clip-' + (++chartCount);
 
+    // The y scale is fitted to what is inside the range, including the
+    // estimated value where a line enters and leaves it.
     var vals = [];
-    opts.series.forEach(function (s) { s.values.forEach(function (v) { if (v !== null) vals.push(v); }); });
-    if (opts.band) opts.band.lo.concat(opts.band.hi).forEach(function (v) { if (v !== null) vals.push(v); });
+    var inRange = function (arr) {
+      for (var i = from; i <= to; i++) if (arr[i] !== null) vals.push(arr[i]);
+    };
+    opts.series.forEach(function (s) {
+      inRange(s.values);
+      [from, to].forEach(function (i) { var e = interp(s.values, i); if (e !== null) vals.push(e); });
+    });
+    if (opts.band) { inRange(opts.band.lo); inRange(opts.band.hi); }
     var svg = el('svg', { viewBox: '0 0 ' + W + ' ' + H, width: W, height: H, class: 'chart', tabindex: '0', role: 'group',
       'aria-label': opts.title + ' line chart. Press left and right arrow keys to read values for each day. A table of the data follows.' });
     box.appendChild(svg);
@@ -89,7 +103,7 @@
     if (opts.yMax === undefined) hi += pad;
     var ticks = niceTicks(lo, hi, 5);
     lo = Math.min(lo, ticks[0]); hi = Math.max(hi, ticks[ticks.length - 1]);
-    var X = function (i) { return m.l + (n === 1 ? iw / 2 : (i / (n - 1)) * iw); };
+    var X = function (i) { return m.l + (span <= 0 ? iw / 2 : ((i - from) / span) * iw); };
     var Y = function (v) { return m.t + ih - ((v - lo) / (hi - lo)) * ih; };
 
     // Gridlines + y labels
@@ -106,17 +120,34 @@
       svg.appendChild(el('rect', { x: wx, y: m.t, width: Math.max(2, X(opts.window.endIdx) - wx), height: ih, class: 'win' }));
     }
 
-    // X labels at month starts
-    var firstOfMonth = [];
-    opts.days.forEach(function (d, i) { if (d.slice(8) === '01') firstOfMonth.push(i); });
-    var every = Math.max(1, Math.ceil(firstOfMonth.length / Math.max(1, Math.floor(iw / 64))));
-    firstOfMonth.forEach(function (i, k) {
-      if (k % every) return;
-      var p = opts.days[i].split('-'), tx = el('text', { x: X(i), y: H - 8, 'text-anchor': 'middle', class: 'axis-label' });
-      tx.textContent = MONTHS[+p[1] - 1] + (p[1] === '01' ? ' ' + p[0] : '');
+    // X labels: days for a short range, month starts for a long one
+    var ticksX = [], labelFor = function (i) { var p = opts.days[i].split('-'); return MONTHS[+p[1] - 1] + ' ' + (+p[2]); };
+    if (span <= 100) {
+      var step = Math.max(1, Math.ceil(span / Math.max(1, Math.floor(iw / 72))));
+      for (var di = from; di <= to; di += step) ticksX.push(di);
+    } else {
+      var firstOfMonth = [];
+      for (var mi = from; mi <= to; mi++) if (opts.days[mi].slice(8) === '01') firstOfMonth.push(mi);
+      var every = Math.max(1, Math.ceil(firstOfMonth.length / Math.max(1, Math.floor(iw / 64))));
+      firstOfMonth.forEach(function (i, k) { if (k % every === 0) ticksX.push(i); });
+      labelFor = function (i) { var p = opts.days[i].split('-'); return MONTHS[+p[1] - 1] + (p[1] === '01' ? ' ' + p[0] : ''); };
+    }
+    ticksX.forEach(function (i) {
+      var tx = el('text', { x: X(i), y: H - 8, 'text-anchor': i === from && span > 0 ? 'start' : 'middle', class: 'axis-label' });
+      tx.textContent = labelFor(i);
       svg.appendChild(tx);
       svg.appendChild(el('line', { x1: X(i), x2: X(i), y1: m.t + ih, y2: m.t + ih + 4, class: 'tick' }));
     });
+
+    // Everything drawn from data is clipped to the plot area so lines that
+    // continue outside the range are cut at its edges.
+    var defs = el('defs', {});
+    var clip = el('clipPath', { id: clipId });
+    clip.appendChild(el('rect', { x: m.l, y: m.t - 4, width: iw, height: ih + 8 }));
+    defs.appendChild(clip);
+    svg.appendChild(defs);
+    var plot = el('g', { 'clip-path': 'url(#' + clipId + ')' });
+    svg.appendChild(plot);
 
     // Min-max band, joined across gap days with straight edges
     if (opts.band) {
@@ -125,7 +156,7 @@
       if (idx.length > 1) {
         var up = idx.map(function (i) { return X(i) + ',' + Y(opts.band.hi[i]); });
         var dn = idx.slice().reverse().map(function (i) { return X(i) + ',' + Y(opts.band.lo[i]); });
-        svg.appendChild(el('polygon', { points: up.concat(dn).join(' '), fill: opts.band.color, opacity: '0.22' }));
+        plot.appendChild(el('polygon', { points: up.concat(dn).join(' '), fill: opts.band.color, opacity: '0.22' }));
       }
     }
 
@@ -139,10 +170,10 @@
         d += (count === 0 ? 'M' : 'L') + X(i).toFixed(1) + ',' + Y(v).toFixed(1);
         count++; lastX = X(i); lastY = Y(v);
       }
-      if (count === 1) svg.appendChild(el('circle', { cx: lastX, cy: lastY, r: 3, fill: s.color }));
+      if (count === 1) plot.appendChild(el('circle', { cx: lastX, cy: lastY, r: 3, fill: s.color }));
       var attrs = { d: d, fill: 'none', stroke: s.color, 'stroke-width': 2, 'stroke-linejoin': 'round' };
       if (s.dash) attrs['stroke-dasharray'] = s.dash;
-      svg.appendChild(el('path', attrs));
+      plot.appendChild(el('path', attrs));
     });
 
     // Cursor
@@ -164,7 +195,7 @@
 
     var cur = -1;
     function show(i, announce) {
-      cur = Math.max(0, Math.min(n - 1, i));
+      cur = Math.max(from, Math.min(to, i));
       var x = X(cur);
       cline.setAttribute('x1', x); cline.setAttribute('x2', x);
       var lines = [], any = false, est = false;
@@ -196,15 +227,15 @@
     svg.appendChild(overlay);
     overlay.addEventListener('pointermove', function (e) {
       var r = svg.getBoundingClientRect(), px = (e.clientX - r.left) * (W / r.width);
-      show(Math.round(((px - m.l) / iw) * (n - 1)), false);
+      show(span <= 0 ? from : Math.round(from + ((px - m.l) / iw) * span), false);
     });
     overlay.addEventListener('pointerleave', hide);
     svg.addEventListener('keydown', function (e) {
       var step = e.shiftKey ? 7 : 1;
-      if (e.key === 'ArrowLeft') { show((cur < 0 ? n - 1 : cur) - step, true); e.preventDefault(); }
-      else if (e.key === 'ArrowRight') { show((cur < 0 ? n - 1 : cur) + step, true); e.preventDefault(); }
-      else if (e.key === 'Home') { show(0, true); e.preventDefault(); }
-      else if (e.key === 'End') { show(n - 1, true); e.preventDefault(); }
+      if (e.key === 'ArrowLeft') { show((cur < 0 ? to : cur) - step, true); e.preventDefault(); }
+      else if (e.key === 'ArrowRight') { show((cur < 0 ? to : cur) + step, true); e.preventDefault(); }
+      else if (e.key === 'Home') { show(from, true); e.preventDefault(); }
+      else if (e.key === 'End') { show(to, true); e.preventDefault(); }
       else if (e.key === 'Escape') { hide(); }
     });
     svg.addEventListener('blur', hide);
