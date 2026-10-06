@@ -203,7 +203,7 @@ if (t === 'site' && !model.sitesById.has(state.scope.site)) { state.scope.type =
     var scoreName = perSite ? 'Score' : 'Average score';
     var band = state.band && !perSite ? { name: 'Lowest to highest site score', color: 'var(--s1)', lo: agg.scoreMin, hi: agg.scoreMax } : null;
 
-    // With several sites selected, the score and issues charts draw one thin
+    // With several sites selected, the score, issues and PDF charts draw one thin
     // line per site (no legend; hover or the up/down keys identify a line) and
     // the scope totals move into the tooltip. A single site keeps its own lines.
     var siteLines = function (key, fmt) {
@@ -233,7 +233,10 @@ if (t === 'site' && !model.sitesById.has(state.scope.site)) { state.scope.type =
     });
     DB.lineChart({
       container: $('chart-pdf'), title: 'PDF count', days: model.days, range: range, zeroBase: true, note: perSite ? null : note,
-      series: [{ name: 'PDFs', color: 'var(--s3)', values: agg.pdf, fmt: DB.fmtInt }], yFmt: DB.fmtInt
+      series: perSite ? [{ name: 'PDFs', color: 'var(--s3)', values: agg.pdf, fmt: DB.fmtInt }] : [],
+      lines: perSite ? null : siteLines('pdf', DB.fmtInt), lineColor: 'var(--s3)',
+      context: perSite ? null : function (i) { return agg.pdf[i] === null ? [] : ['All sites: ' + DB.fmtInt(agg.pdf[i]) + ' PDFs']; },
+      yFmt: DB.fmtInt
     });
 
     var sc = function (v) { return DB.scoreHtml(v); };
