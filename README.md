@@ -270,6 +270,7 @@ Notes:
 - Totals carry each site's last reading forward. A site with no new reading for 7 days is **stale** (still counted, flagged).
 - On days when no site in scope was read, chart lines connect the neighbouring readings with a straight line. The tooltip marks those values with `~` as estimates; the data tables list only real readings.
 - Average score is a simple mean across sites in scope. Scores above 100 are shown as reported, with a flag.
+- **Compare with** sets the period for everything: the change tiles, the gains/losses, and the x axis of every chart, chart table and table sparkline (7, 30, 90 days, since the previous reading, or since the baseline). The y axis refits to that period.
 - Change tiles compare only sites present at the window start; new sites are reported separately.
 - A banner warns when the newest main or DLS export is over 36 hours old.
 

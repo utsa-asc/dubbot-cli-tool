@@ -190,7 +190,9 @@ if (t === 'site' && !model.sitesById.has(state.scope.site)) { state.scope.type =
   }
 
   function renderCharts() {
-    var w = { startIdx: res.window.startIdx, endIdx: res.window.endIdx };
+    // Every chart (and its table) covers the comparison window selected above.
+    var range = { from: res.window.startIdx, to: res.window.endIdx };
+    var sl = function (a) { return a.slice(range.from, range.to + 1); };
     var perSite = state.scope.type === 'site' || ids.length === 1;
     var note = function (i) {
       var bits = [];
@@ -202,35 +204,35 @@ if (t === 'site' && !model.sitesById.has(state.scope.site)) { state.scope.type =
     var band = state.band && !perSite ? { name: 'Lowest to highest site score', color: 'var(--s1)', lo: agg.scoreMin, hi: agg.scoreMax } : null;
 
     DB.lineChart({
-      container: $('chart-score'), title: scoreName, days: model.days, window: w, note: perSite ? null : note,
+      container: $('chart-score'), title: scoreName, days: model.days, range: range, note: perSite ? null : note,
       series: [{ name: scoreName + ' (%)', color: 'var(--s1)', values: agg.score, fmt: function (v) { return DB.fmtScore(v) + '%'; } }],
       band: band, yFmt: function (v) { return DB.fmtScore(v); }
     });
     DB.lineChart({
-      container: $('chart-issues'), title: 'Accessibility issues', days: model.days, window: w, zeroBase: true, note: perSite ? null : note,
+      container: $('chart-issues'), title: 'Accessibility issues', days: model.days, range: range, zeroBase: true, note: perSite ? null : note,
       series: [
         { name: 'Issues', color: 'var(--s1)', values: agg.issues, fmt: DB.fmtInt },
         { name: 'Pages with issues', color: 'var(--s2)', dash: '6 4', values: agg.pages, fmt: DB.fmtInt }
       ], yFmt: DB.fmtInt
     });
     DB.lineChart({
-      container: $('chart-pdf'), title: 'PDF count', days: model.days, window: w, zeroBase: true, note: perSite ? null : note,
+      container: $('chart-pdf'), title: 'PDF count', days: model.days, range: range, zeroBase: true, note: perSite ? null : note,
       series: [{ name: 'PDFs', color: 'var(--s3)', values: agg.pdf, fmt: DB.fmtInt }], yFmt: DB.fmtInt
     });
 
     var sc = function (v) { return DB.scoreHtml(v); };
-    DB.dataTable($('table-score'), scoreName, model.days, [
-      { label: scoreName + ' (%)', values: agg.score, fmt: sc },
-      { label: 'Lowest', values: agg.scoreMin, fmt: sc },
-      { label: 'Highest', values: agg.scoreMax, fmt: sc },
-      { label: 'Sites', values: agg.count.map(function (c, i) { return agg.score[i] === null ? null : c; }), fmt: DB.fmtInt }
+    DB.dataTable($('table-score'), scoreName, sl(model.days), [
+      { label: scoreName + ' (%)', values: sl(agg.score), fmt: sc },
+      { label: 'Lowest', values: sl(agg.scoreMin), fmt: sc },
+      { label: 'Highest', values: sl(agg.scoreMax), fmt: sc },
+      { label: 'Sites', values: sl(agg.count.map(function (c, i) { return agg.score[i] === null ? null : c; })), fmt: DB.fmtInt }
     ]);
-    DB.dataTable($('table-issues'), 'Accessibility issues', model.days, [
-      { label: 'Issues', values: agg.issues, fmt: DB.fmtInt },
-      { label: 'Pages with issues', values: agg.pages, fmt: DB.fmtInt },
-      { label: 'Stale sites', values: agg.stale.map(function (c, i) { return agg.issues[i] === null ? null : c; }), fmt: DB.fmtInt }
+    DB.dataTable($('table-issues'), 'Accessibility issues', sl(model.days), [
+      { label: 'Issues', values: sl(agg.issues), fmt: DB.fmtInt },
+      { label: 'Pages with issues', values: sl(agg.pages), fmt: DB.fmtInt },
+      { label: 'Stale sites', values: sl(agg.stale.map(function (c, i) { return agg.issues[i] === null ? null : c; })), fmt: DB.fmtInt }
     ]);
-    DB.dataTable($('table-pdf'), 'PDF count', model.days, [{ label: 'PDFs', values: agg.pdf, fmt: DB.fmtInt }]);
+    DB.dataTable($('table-pdf'), 'PDF count', sl(model.days), [{ label: 'PDFs', values: sl(agg.pdf), fmt: DB.fmtInt }]);
   }
 
   function renderMovers() {
@@ -243,7 +245,7 @@ if (t === 'site' && !model.sitesById.has(state.scope.site)) { state.scope.type =
 
   function renderTable() {
     if (!res) return;
-    var from = Math.max(0, Math.min(res.window.startIdx, res.window.endIdx - 30));
+    var from = res.window.startIdx; // table sparklines follow the comparison window too
     DB.renderSitesTable($('sites-table'), res, model, state.sort, state.filter, { from: from, to: res.window.endIdx });
   }
 
