@@ -203,21 +203,40 @@ if (t === 'site' && !model.sitesById.has(state.scope.site)) { state.scope.type =
     var scoreName = perSite ? 'Score' : 'Average score';
     var band = state.band && !perSite ? { name: 'Lowest to highest site score', color: 'var(--s1)', lo: agg.scoreMin, hi: agg.scoreMax } : null;
 
+    // With several sites selected, the score, issues and PDF charts draw one thin
+    // line per site (no legend; hover or the up/down keys identify a line) and
+    // the scope totals move into the tooltip. A single site keeps its own lines.
+    var siteLines = function (key, fmt) {
+      return ids.map(function (id) {
+        var s = model.sitesById.get(id);
+        return { name: s.name, fmt: fmt, values: s.filled.map(function (r, d) { return r && s.actual[d] ? r[key] : null; }) };
+      }).filter(function (l) { return l.values.some(function (v) { return v !== null; }); });
+    };
+    var scoreFmt = function (v) { return DB.fmtScore(v) + '%'; };
+
     DB.lineChart({
       container: $('chart-score'), title: scoreName, days: model.days, range: range, note: perSite ? null : note,
-      series: [{ name: scoreName + ' (%)', color: 'var(--s1)', values: agg.score, fmt: function (v) { return DB.fmtScore(v) + '%'; } }],
+      series: perSite ? [{ name: scoreName + ' (%)', color: 'var(--s1)', values: agg.score, fmt: scoreFmt }] : [],
+      lines: perSite ? null : siteLines('score', scoreFmt), lineColor: 'var(--s1)',
+      context: perSite ? null : function (i) { return agg.score[i] === null ? [] : ['Average of ' + agg.count[i] + ' sites: ' + scoreFmt(agg.score[i])]; },
       band: band, yFmt: function (v) { return DB.fmtScore(v); }
     });
     DB.lineChart({
       container: $('chart-issues'), title: 'Accessibility issues', days: model.days, range: range, zeroBase: true, note: perSite ? null : note,
-      series: [
+      series: perSite ? [
         { name: 'Issues', color: 'var(--s1)', values: agg.issues, fmt: DB.fmtInt },
         { name: 'Pages with issues', color: 'var(--s2)', dash: '6 4', values: agg.pages, fmt: DB.fmtInt }
-      ], yFmt: DB.fmtInt
+      ] : [],
+      lines: perSite ? null : siteLines('issues', DB.fmtInt), lineColor: 'var(--s1)',
+      context: perSite ? null : function (i) { return agg.issues[i] === null ? [] : ['All sites: ' + DB.fmtInt(agg.issues[i]) + ' issues, ' + DB.fmtInt(agg.pages[i]) + ' pages with issues']; },
+      yFmt: DB.fmtInt
     });
     DB.lineChart({
       container: $('chart-pdf'), title: 'PDF count', days: model.days, range: range, zeroBase: true, note: perSite ? null : note,
-      series: [{ name: 'PDFs', color: 'var(--s3)', values: agg.pdf, fmt: DB.fmtInt }], yFmt: DB.fmtInt
+      series: perSite ? [{ name: 'PDFs', color: 'var(--s3)', values: agg.pdf, fmt: DB.fmtInt }] : [],
+      lines: perSite ? null : siteLines('pdf', DB.fmtInt), lineColor: 'var(--s3)',
+      context: perSite ? null : function (i) { return agg.pdf[i] === null ? [] : ['All sites: ' + DB.fmtInt(agg.pdf[i]) + ' PDFs']; },
+      yFmt: DB.fmtInt
     });
 
     var sc = function (v) { return DB.scoreHtml(v); };

@@ -64,7 +64,9 @@
         opts.band.color + '" opacity="0.25"/></svg>' + esc(opts.band.name);
       legend.appendChild(bl);
     }
-    box.appendChild(legend);
+    // Per-site charts have no legend (hover or the up/down keys identify a line).
+    if (opts.series.length || opts.band) box.appendChild(legend);
+    var siteLines = opts.lines || [];
 
     var W = Math.max(280, box.clientWidth || 600), H = 250;
     var m = { l: 56, r: 14, t: 10, b: 28 }, iw = W - m.l - m.r, ih = H - m.t - m.b;
@@ -85,9 +87,14 @@
       inRange(s.values);
       [from, to].forEach(function (i) { var e = interp(s.values, i); if (e !== null) vals.push(e); });
     });
+    siteLines.forEach(function (l) {
+      inRange(l.values);
+      [from, to].forEach(function (i) { var e = interp(l.values, i); if (e !== null) vals.push(e); });
+    });
     if (opts.band) { inRange(opts.band.lo); inRange(opts.band.hi); }
     var svg = el('svg', { viewBox: '0 0 ' + W + ' ' + H, width: W, height: H, class: 'chart', tabindex: '0', role: 'group',
-      'aria-label': opts.title + ' line chart. Press left and right arrow keys to read values for each day. A table of the data follows.' });
+      'aria-label': opts.title + ' line chart. Press left and right arrow keys to read values for each day.' +
+        (siteLines.length ? ' Press up and down arrow keys to move between sites.' : '') + ' A table of the data follows.' });
     box.appendChild(svg);
     if (!vals.length) {
       var t = el('text', { x: W / 2, y: H / 2, 'text-anchor': 'middle', class: 'axis-label' });
@@ -160,6 +167,23 @@
       }
     }
 
+    // One thin line per site, behind the series. Same rules as below: straight
+    // segments across gap days, a lone reading drawn as a dot.
+    var lineColor = opts.lineColor || 'var(--s1)', LINE_W = 1.2, LINE_OP = 0.35;
+    var lineEls = siteLines.map(function (l) {
+      var d = '', count = 0, lastX, lastY;
+      for (var i = 0; i < n; i++) {
+        var v = l.values[i];
+        if (v === null) continue;
+        d += (count === 0 ? 'M' : 'L') + X(i).toFixed(1) + ',' + Y(v).toFixed(1);
+        count++; lastX = X(i); lastY = Y(v);
+      }
+      if (count === 1) plot.appendChild(el('circle', { cx: lastX, cy: lastY, r: 2, fill: lineColor, opacity: LINE_OP }));
+      var p = el('path', { d: d, fill: 'none', stroke: lineColor, 'stroke-width': LINE_W, 'stroke-linejoin': 'round', opacity: LINE_OP });
+      plot.appendChild(p);
+      return p;
+    });
+
     // Lines: straight segments across gap days (a linear estimate); a lone
     // reading is drawn as a dot.
     opts.series.forEach(function (s) {
@@ -184,7 +208,21 @@
       var c = el('circle', { r: 4, fill: s.color, stroke: 'var(--bg)', 'stroke-width': 1.5 });
       cursor.appendChild(c); return c;
     });
+    var hotDot = el('circle', { r: 4, fill: lineColor, stroke: 'var(--bg)', 'stroke-width': 1.5, visibility: 'hidden' });
+    cursor.appendChild(hotDot);
     svg.appendChild(cursor);
+
+    // The highlighted site line (-1 = none)
+    var hot = -1;
+    function setHot(k) {
+      if (k === hot) return;
+      if (hot >= 0) { lineEls[hot].setAttribute('stroke-width', LINE_W); lineEls[hot].setAttribute('opacity', LINE_OP); }
+      hot = k;
+      if (hot >= 0) {
+        lineEls[hot].setAttribute('stroke-width', 2.8); lineEls[hot].setAttribute('opacity', 1);
+        plot.appendChild(lineEls[hot]); // raise above the other site lines
+      } else hotDot.setAttribute('visibility', 'hidden');
+    }
 
     var tip = document.createElement('div');
     tip.className = 'tooltip'; tip.hidden = true;
@@ -194,7 +232,7 @@
     box.appendChild(live);
 
     var cur = -1;
-    function show(i, announce) {
+    function show(i, announce, py) {
       cur = Math.max(from, Math.min(to, i));
       var x = X(cur);
       cline.setAttribute('x1', x); cline.setAttribute('x2', x);
@@ -208,10 +246,34 @@
         dots[k].setAttribute('cx', x); dots[k].setAttribute('cy', Y(v));
         lines.push(s.name + ': ' + (raw === null ? '~' : '') + (s.fmt ? s.fmt(v) : v));
       });
+      var hotText = null;
+      if (siteLines.length) {
+        if (py !== undefined) { // pointer: highlight the line nearest to it on this day
+          var best = -1, bd = Infinity;
+          siteLines.forEach(function (l, k) {
+            var v = interp(l.values, cur);
+            if (v === null) return;
+            var dd = Math.abs(Y(v) - py);
+            if (dd < bd) { bd = dd; best = k; }
+          });
+          setHot(bd <= 18 ? best : -1);
+        }
+        if (hot >= 0) {
+          var hl = siteLines[hot], hraw = hl.values[cur], hv = interp(hl.values, cur);
+          if (hv === null) { hotDot.setAttribute('visibility', 'hidden'); hotText = hl.name + ': no data'; }
+          else {
+            hotDot.setAttribute('visibility', 'visible'); hotDot.setAttribute('cx', x); hotDot.setAttribute('cy', Y(hv));
+            if (hraw === null) est = true;
+            hotText = hl.name + ': ' + (hraw === null ? '~' : '') + (hl.fmt ? hl.fmt(hv) : hv);
+          }
+        } else hotDot.setAttribute('visibility', 'hidden');
+      }
       cursor.setAttribute('visibility', 'visible');
       var head = dayLabel(opts.days[cur]);
-      var body = any ? lines : ['No readings this day'];
+      var body = (hotText ? [hotText] : []).concat(lines);
+      if (!body.length && !(opts.context && opts.context(cur).length)) body = ['No readings this day'];
       if (est) body.push('No reading this day; estimated between neighbouring readings');
+      if (opts.context) opts.context(cur).forEach(function (c) { body.push(c); });
       if (opts.note) { var nt = opts.note(cur); if (nt) body.push(nt); }
       tip.innerHTML = '<strong>' + esc(head) + '</strong>' + body.map(function (l) { return '<div>' + esc(l) + '</div>'; }).join('');
       tip.hidden = false;
@@ -221,13 +283,13 @@
       tip.style.top = (legend.offsetHeight + 8) + 'px';
       if (announce) live.textContent = head + '. ' + body.join('. ');
     }
-    function hide() { cursor.setAttribute('visibility', 'hidden'); tip.hidden = true; }
+    function hide() { setHot(-1); cursor.setAttribute('visibility', 'hidden'); tip.hidden = true; }
 
     var overlay = el('rect', { x: m.l, y: m.t, width: iw, height: ih, fill: 'transparent' });
     svg.appendChild(overlay);
     overlay.addEventListener('pointermove', function (e) {
-      var r = svg.getBoundingClientRect(), px = (e.clientX - r.left) * (W / r.width);
-      show(span <= 0 ? from : Math.round(from + ((px - m.l) / iw) * span), false);
+      var r = svg.getBoundingClientRect(), px = (e.clientX - r.left) * (W / r.width), py = (e.clientY - r.top) * (H / r.height);
+      show(span <= 0 ? from : Math.round(from + ((px - m.l) / iw) * span), false, py);
     });
     overlay.addEventListener('pointerleave', hide);
     svg.addEventListener('keydown', function (e) {
@@ -236,6 +298,11 @@
       else if (e.key === 'ArrowRight') { show((cur < 0 ? to : cur) + step, true); e.preventDefault(); }
       else if (e.key === 'Home') { show(from, true); e.preventDefault(); }
       else if (e.key === 'End') { show(to, true); e.preventDefault(); }
+      else if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && siteLines.length) {
+        var dir = e.key === 'ArrowDown' ? 1 : -1;
+        setHot(hot < 0 ? (dir === 1 ? 0 : siteLines.length - 1) : (hot + dir + siteLines.length) % siteLines.length);
+        show(cur < 0 ? to : cur, true); e.preventDefault();
+      }
       else if (e.key === 'Escape') { hide(); }
     });
     svg.addEventListener('blur', hide);
