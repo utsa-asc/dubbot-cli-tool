@@ -85,7 +85,8 @@
       s.firstIdx = s.readings[0].dayNum - first;
       s.latest = latest;
       s.listed = !!dir;
-      s.name = (dir && dir.displayUrl) || stripUrl(latest.url) || s.id;
+      // Display names never carry a scheme or trailing slash, whichever source they came from.
+      s.name = stripUrl((dir && dir.displayUrl) || latest.url || '') || s.id;
       s.lists = dir && dir.lists.length ? dir.lists : ['Unlisted'];
       s.dubbotUrl = safeDubbotUrl(dir && dir.dubbotUrl, s.id);
       sites.push(s);
