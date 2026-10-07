@@ -31,6 +31,8 @@ assert.ok(exportRows >= 12099, 'expected at least 12,099 export rows');
 assert.ok(rows.length >= 12310, 'expected at least 12,310 rows');
 assert.ok(manifest.files.some(f => f.list === 'backfill'), 'backfill file missing');
 
+// Display names have no scheme or trailing slash, whatever the directory or export wrote.
+assert.ok(m.sites.every(s => !/^https?:\/\//i.test(s.name) && !s.name.endsWith('/')), 'site names must not start with http(s):// or end with /');
 const all = m.sites.map(s => s.id);
 const agg = model.aggregate(m, all);
 const at = d => m.days.indexOf(d);
