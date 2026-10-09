@@ -21,6 +21,6 @@
     "@types/node": "^26",
     "tsup": "^8",
     "tsx": "^4",
-    "typescript": "^5"
+    "typescript": "^7"
   }
 }
