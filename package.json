@@ -12,7 +12,7 @@
     "commander": "^15",
     "csv-stringify": "^6",
     "dotenv": "^18",
-    "graphql": "^16",
+    "graphql": "^17",
     "graphql-request": "^7",
     "pino": "^10",
     "zod": "^3"
